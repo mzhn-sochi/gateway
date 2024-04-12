@@ -12,14 +12,14 @@ type Config struct {
 		Port int    `env:"APP_PORT" env-default:"8080"`
 	}
 	Services struct {
-		Processing struct {
-			Host string `env:"PROCESSING_HOST" env-default:"processing"`
-			Port int    `env:"PROCESSING_PORT" env-default:"8080"`
-		}
-
 		PriceTagAnalyzer struct {
 			Host string `env:"PRICE_TAG_ANALYZER_HOST" env-default:"77.221.158.75"`
 			Port int    `env:"PRICE_TAG_ANALYZER_PORT" env-default:"50051"`
+		}
+
+		Suggestions struct {
+			Host string `env:"SUGGESTIONS_HOST" env-default:"localhost"`
+			Port int    `env:"SUGGESTIONS_PORT" env-default:"2020"`
 		}
 	}
 

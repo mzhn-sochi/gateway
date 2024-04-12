@@ -22,7 +22,9 @@ type App struct {
 	controllers []controllers.Controller
 }
 
-func newApp(config *config.Config, log *slog.Logger, analyzerController *controllers.AnalyzerController) *App {
+func newApp(config *config.Config, log *slog.Logger,
+	analyzerController *controllers.AnalyzerController,
+	suggestionsController *controllers.SuggestionsController) *App {
 
 	app := fiber.New(fiber.Config{
 		AppName:       "sochya-gateway",
@@ -50,6 +52,7 @@ func newApp(config *config.Config, log *slog.Logger, analyzerController *control
 		logger: log,
 		controllers: []controllers.Controller{
 			analyzerController,
+			suggestionsController,
 		},
 	}
 }

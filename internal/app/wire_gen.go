@@ -11,6 +11,7 @@ import (
 	"github.com/mzhn-sochi/gateway/internal/controllers"
 	"github.com/mzhn-sochi/gateway/internal/logger"
 	"github.com/mzhn-sochi/gateway/internal/service/analyzerservice"
+	"github.com/mzhn-sochi/gateway/internal/service/suggestions"
 )
 
 // Injectors from wire.go:
@@ -20,6 +21,8 @@ func InitApp() *App {
 	slogLogger := logger.New(configConfig)
 	service := analyzerservice.New(configConfig, slogLogger)
 	analyzerController := controllers.NewAnalyzerController(service)
-	app := newApp(configConfig, slogLogger, analyzerController)
+	suggestionsService := suggestions.New(configConfig, slogLogger)
+	suggestionsController := controllers.NewSuggestionsController(suggestionsService)
+	app := newApp(configConfig, slogLogger, analyzerController, suggestionsController)
 	return app
 }

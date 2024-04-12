@@ -6,6 +6,7 @@ package app
 import (
 	"github.com/mzhn-sochi/gateway/internal/config"
 	"github.com/mzhn-sochi/gateway/internal/logger"
+	"github.com/mzhn-sochi/gateway/internal/service/suggestions"
 
 	"github.com/google/wire"
 	"github.com/mzhn-sochi/gateway/internal/controllers"
@@ -19,7 +20,9 @@ func InitApp() *App {
 		wire.NewSet(config.New),
 		wire.NewSet(controllers.NewAnalyzerController),
 		wire.Bind(new(controllers.AnalyzerService), new(*analyzerservice.Service)),
-
 		wire.NewSet(analyzerservice.New),
+
+		wire.NewSet(suggestions.New),
+		wire.NewSet(controllers.NewSuggestionsController),
 	))
 }
