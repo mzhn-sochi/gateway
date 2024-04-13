@@ -89,6 +89,7 @@ func (a *App) Run() error {
 	tt.Get("/", a.ticketController.List())
 	tt.Get("/:id", a.ticketController.Find())
 	tt.Post("/", a.AuthController.AuthRequired(auth.Role_user), a.ticketController.Create())
+	tt.Patch("/:id", a.ticketController.CloseTicket())
 
 	v1.Get("/user/tickets", a.AuthController.AuthRequired(auth.Role_user), a.ticketController.ListUsers())
 	v1.Get("/profile", a.AuthController.AuthRequired(auth.Role_user), a.AuthController.Profile())

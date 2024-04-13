@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"github.com/mzhn-sochi/gateway/internal/entity/dto"
+	"github.com/mzhn-sochi/gateway/internal/service/ticketservice"
 	"log/slog"
 
 	"github.com/go-playground/validator/v10"
@@ -16,6 +18,8 @@ type TicketsService interface {
 	Find(ctx context.Context, id string) (*entity.Ticket, error)
 	List(ctx context.Context, filters *entity.TicketFilters) ([]*entity.Ticket, uint64, error)
 	Create(ctx context.Context, createTicketDto *dto.CreateTicket) (string, error)
+
+	Close(ctx context.Context, id string) error
 }
 
 type FileUploader interface {
@@ -244,5 +248,28 @@ func (c *TicketController) Create() fiber.Handler {
 		}
 
 		return ok(ctx, ticketId)
+	}
+}
+
+func (c *TicketController) CloseTicket() fiber.Handler {
+
+	return func(ctx *fiber.Ctx) error {
+		logger := ctx.Locals(middleware.LOGGER).(*slog.Logger).With("service", "tickets").With("method", "CloseTicket")
+
+		id := ctx.Params("id", "")
+		if id == "" {
+			return bad("id is required")
+		}
+
+		logger.Debug("close ticket", slog.String("ticketId", id))
+
+		if err := c.service.Close(ctx.Context(), id); err != nil {
+			if errors.Is(err, ticketservice.ErrTicketNotFound) {
+				return notFound("ticket not found for id " + id)
+			}
+			return internal(err.Error())
+		}
+
+		return ok(ctx)
 	}
 }

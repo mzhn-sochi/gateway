@@ -10,7 +10,9 @@ import (
 	"github.com/mzhn-sochi/gateway/internal/entity/dto"
 	"github.com/mzhn-sochi/gateway/pkg/middleware"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"log/slog"
 )
 
@@ -87,8 +89,6 @@ func (s *Service) List(ctx context.Context, filters *entity.TicketFilters) ([]*e
 		return nil, 0, err
 	}
 
-	logger.Debug("ticket service list response", slog.Any("response", response))
-
 	tt := make([]*entity.Ticket, 0, len(response.Tickets))
 	for _, t := range response.Tickets {
 		tt = append(tt, &entity.Ticket{
@@ -124,4 +124,22 @@ func (s *Service) Create(ctx context.Context, t *dto.CreateTicket) (string, erro
 	}
 
 	return response.TicketId, nil
+}
+
+func (s *Service) Close(ctx context.Context, id string) error {
+
+	req := &ts.CloseTicketRequest{TicketId: id}
+
+	if _, err := s.client.CloseTicket(ctx, req); err != nil {
+		if e, ok := status.FromError(err); ok {
+			switch e.Code() {
+			case codes.NotFound:
+				return ErrTicketNotFound
+			}
+		}
+
+		return fmt.Errorf("error with closing ticket: %w", err)
+	}
+
+	return nil
 }
