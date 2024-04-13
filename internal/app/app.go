@@ -88,7 +88,7 @@ func (a *App) Run() error {
 	tt := v1.Group("/tickets")
 	tt.Get("/", a.ticketController.List())
 	tt.Get("/:id", a.ticketController.Find())
-	tt.Post("/", a.ticketController.Create())
+	tt.Post("/", a.AuthController.AuthRequired(auth.Role_user), a.ticketController.Create())
 
 	a.logger.Info("server started", slog.String("host", host), slog.Int("port", port))
 	return a.app.Listen(fmt.Sprintf("%s:%d", host, port))
