@@ -118,16 +118,26 @@ func (a *AuthController) SignOut() fiber.Handler {
 
 func (a *AuthController) Refresh() fiber.Handler {
 
+	type req struct {
+		RefreshToken string `json:"refreshToken" validate:"required"`
+	}
+
 	return func(ctx *fiber.Ctx) error {
 		logger := ctx.Context().Value(middleware.LOGGER).(*slog.Logger).With("controller", "auth").With("method", "refresh")
 
-		refreshToken := ctx.Cookies("refresh_token", "")
-		if refreshToken == "" {
-			logger.Debug("refresh token is missing")
-			return bad("refresh token is missing")
+		var r req
+
+		if err := ctx.BodyParser(&r); err != nil {
+			logger.Error("failed to parse request", slog.String("err", err.Error()))
+			return internal(err.Error())
 		}
 
-		tokens, err := a.service.Refresh(ctx.Context(), refreshToken)
+		if err := a.validator.Struct(r); err != nil {
+			logger.Debug("failed to validate request", slog.String("err", err.Error()))
+			return bad(err.Error())
+		}
+
+		tokens, err := a.service.Refresh(ctx.Context(), r.RefreshToken)
 		if err != nil {
 			logger.Error("failed to refresh", slog.String("err", err.Error()))
 			return internal(err.Error())
