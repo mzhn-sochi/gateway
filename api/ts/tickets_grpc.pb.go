@@ -7,7 +7,7 @@
 package ts
 
 import (
-	share "github.com/mzhn-sochi/gateway/api/share"
+	share "api/share"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"

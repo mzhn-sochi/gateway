@@ -15,7 +15,7 @@ import (
 type TicketsService interface {
 	Find(ctx context.Context, id string) (*entity.Ticket, error)
 	List(ctx context.Context, filters *entity.TicketFilters) ([]*entity.Ticket, uint64, error)
-	Create(ctx context.Context, userId string, url string, addr string) (string, error)
+	Create(ctx context.Context, createTicketDto *dto.CreateTicket) (string, error)
 }
 
 type FileUploader interface {
@@ -196,6 +196,11 @@ func (c *TicketController) Create() fiber.Handler {
 			return bad("address is required")
 		}
 
+		shopName := ctx.FormValue("shopName", "")
+		if shopName == "" {
+			return bad("shopName is required")
+		}
+
 		f, err := ctx.FormFile("pricetag")
 		if err != nil {
 			return bad(err.Error())
@@ -220,12 +225,20 @@ func (c *TicketController) Create() fiber.Handler {
 			return internal(err.Error())
 		}
 
-		uid := "test-user"
-		if u, ok := ctx.Locals("user").(*entity.UserClaims); ok {
-			uid = u.Id
+		u, k := ctx.Locals("user").(*entity.UserClaims)
+		if !k {
+			logger.Error("cannot get user from context")
+			return internal("cannot get user from context")
 		}
 
-		ticketId, err := c.service.Create(ctx.Context(), uid, url, addr)
+		createTicketDto := &dto.CreateTicket{
+			UserId:   u.Id,
+			ShopName: shopName,
+			ShopAddr: addr,
+			ImageUrl: url,
+		}
+
+		ticketId, err := c.service.Create(ctx.Context(), createTicketDto)
 		if err != nil {
 			return internal(err.Error())
 		}
