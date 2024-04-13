@@ -9,10 +9,10 @@ services:
     ports:
       - "8080:8080"
     networks:
-            - main
+      - main
 
 
 networks:
-    main:
-            external:
-                    name: main
+  main:
+    external:
+      name: main

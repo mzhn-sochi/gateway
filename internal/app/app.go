@@ -21,6 +21,7 @@ type App struct {
 	analyzerController    *controllers.AnalyzerController
 	suggestionsController *controllers.SuggestionsController
 	AuthController        *controllers.AuthController
+	ticketController      *controllers.TicketController
 }
 
 func newApp(
@@ -29,6 +30,7 @@ func newApp(
 	analyzerController *controllers.AnalyzerController,
 	suggestionsController *controllers.SuggestionsController,
 	authController *controllers.AuthController,
+	ticketController *controllers.TicketController,
 ) *App {
 	app := fiber.New(fiber.Config{
 		AppName:       "sochya-gateway",
@@ -57,6 +59,7 @@ func newApp(
 		analyzerController:    analyzerController,
 		suggestionsController: suggestionsController,
 		AuthController:        authController,
+		ticketController:      ticketController,
 	}
 }
 
@@ -85,6 +88,10 @@ func (a *App) Run() error {
 
 	v1.Post("/analyze", a.analyzerController.Analyze())
 	v1.Post("/suggestions", a.suggestionsController.GetSuggestions())
+
+	tt := v1.Group("/tickets")
+	tt.Get("/", a.ticketController.List())
+	tt.Get("/:id", a.ticketController.Find())
 
 	a.logger.Info("server started", slog.String("host", host), slog.Int("port", port))
 	return a.app.Listen(fmt.Sprintf("%s:%d", host, port))
