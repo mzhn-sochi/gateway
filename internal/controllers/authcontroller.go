@@ -7,33 +7,45 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/mzhn-sochi/gateway/api/auth"
 	"github.com/mzhn-sochi/gateway/internal/entity"
+	"github.com/mzhn-sochi/gateway/internal/entity/dto"
 	"github.com/mzhn-sochi/gateway/internal/service/authservice"
 	"github.com/mzhn-sochi/gateway/pkg/middleware"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"log/slog"
 	"strings"
 )
 
 type AuthService interface {
-	SignIn(ctx context.Context, phone, password string) (*entity.Tokens, error)
-	SignUp(ctx context.Context, phone, password string) (*entity.Tokens, error)
+	SignIn(ctx context.Context, credentials *entity.UserCredentials) (*entity.Tokens, error)
+	SignUp(ctx context.Context, dto *dto.RegisterUser) (*entity.Tokens, error)
 	SignOut(ctx context.Context, accessToken string) error
 	Authenticate(ctx context.Context, accessToken string, role auth.Role) (*entity.UserClaims, error)
 	Refresh(ctx context.Context, refreshToken string) (*entity.Tokens, error)
 }
 
-type AuthController struct {
-	service   AuthService
-	validator *validator.Validate
+type UserService interface {
+	FindById(ctx context.Context, id string) (*entity.User, error)
 }
 
-func NewAuthController(service AuthService) *AuthController {
-	return &AuthController{service: service, validator: validator.New()}
+type AuthController struct {
+	service     AuthService
+	userService UserService
+	validator   *validator.Validate
+}
+
+func NewAuthController(service AuthService, userService UserService) *AuthController {
+	return &AuthController{
+		service:     service,
+		validator:   validator.New(),
+		userService: userService,
+	}
 }
 
 func (a *AuthController) SignIn() fiber.Handler {
 
 	type request struct {
-		Phone    string `json:"phone" validate:"required,numeric,len=11"`
+		Phone    string `json:"phone" validate:"required,len=11"`
 		Password string `json:"password" validate:"required"`
 	}
 
@@ -53,7 +65,12 @@ func (a *AuthController) SignIn() fiber.Handler {
 			return bad(err.Error())
 		}
 
-		tokens, err := a.service.SignIn(ctx.Context(), req.Phone, req.Password)
+		credentials := &entity.UserCredentials{
+			Phone:    req.Phone,
+			Password: req.Password,
+		}
+
+		tokens, err := a.service.SignIn(ctx.Context(), credentials)
 		if err != nil {
 			logger.Error("failed to sign in", slog.String("err", err.Error()))
 			return internal(err.Error())
@@ -67,8 +84,11 @@ func (a *AuthController) SignIn() fiber.Handler {
 func (a *AuthController) SignUp() fiber.Handler {
 
 	type request struct {
-		Phone    string `json:"phone" validate:"required,numeric,len=11"`
-		Password string `json:"password" validate:"required"`
+		Phone      string `json:"phone" validate:"required,len=11"`
+		Password   string `json:"password" validate:"required"`
+		LastName   string `json:"lastName" validate:"required"`
+		FirstName  string `json:"firstName" validate:"required"`
+		MiddleName string `json:"middleName" validate:"required"`
 	}
 
 	return func(ctx *fiber.Ctx) error {
@@ -87,8 +107,26 @@ func (a *AuthController) SignUp() fiber.Handler {
 			return bad(err.Error())
 		}
 
-		tokens, err := a.service.SignUp(ctx.Context(), req.Phone, req.Password)
+		u := &dto.RegisterUser{
+			User: entity.User{
+				Phone:      req.Phone,
+				LastName:   req.LastName,
+				FirstName:  req.FirstName,
+				MiddleName: req.MiddleName,
+			},
+			Password: req.Password,
+		}
+
+		tokens, err := a.service.SignUp(ctx.Context(), u)
 		if err != nil {
+
+			if e, ok := status.FromError(err); ok {
+				switch e.Code() {
+				case codes.AlreadyExists:
+					return bad(e.Message())
+				}
+			}
+
 			logger.Error("failed to sign up", slog.String("err", err.Error()))
 			return internal(err.Error())
 		}
@@ -190,5 +228,25 @@ func (a *AuthController) AuthRequired(role auth.Role) fiber.Handler {
 		ctx.Locals("user", u)
 
 		return ctx.Next()
+	}
+}
+
+func (a *AuthController) Profile() fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+
+		logger := ctx.Context().Value(middleware.LOGGER).(*slog.Logger).With("controller", "auth").With("method", "profile")
+
+		u, k := ctx.Locals("user").(*entity.UserClaims)
+		if !k {
+			logger.Error("missing user")
+			return internal("missing user")
+		}
+
+		user, err := a.userService.FindById(ctx.Context(), u.Id)
+		if err != nil {
+			return err
+		}
+
+		return ok(ctx, user)
 	}
 }

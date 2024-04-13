@@ -91,6 +91,7 @@ func (a *App) Run() error {
 	tt.Post("/", a.AuthController.AuthRequired(auth.Role_user), a.ticketController.Create())
 
 	v1.Get("/user/tickets", a.AuthController.AuthRequired(auth.Role_user), a.ticketController.ListUsers())
+	v1.Get("/profile", a.AuthController.AuthRequired(auth.Role_user), a.AuthController.Profile())
 
 	a.logger.Info("server started", slog.String("host", host), slog.Int("port", port))
 	return a.app.Listen(fmt.Sprintf("%s:%d", host, port))

@@ -113,7 +113,7 @@ func (c *TicketController) List() fiber.Handler {
 		for _, t := range tickets {
 			user, err := c.userFinder.FindById(ctx.Context(), t.UserId)
 			if err != nil {
-				return err
+				return notFound(err.Error())
 			}
 			ticket := &dto.Ticket{
 				Ticket: t,
@@ -172,7 +172,7 @@ func (c *TicketController) ListUsers() fiber.Handler {
 			if user == nil {
 				user, err = c.userFinder.FindById(ctx.Context(), t.UserId)
 				if err != nil {
-					return err
+					return notFound(err.Error())
 				}
 			}
 

@@ -6,6 +6,7 @@ import (
 	"github.com/mzhn-sochi/gateway/api/auth"
 	"github.com/mzhn-sochi/gateway/internal/config"
 	"github.com/mzhn-sochi/gateway/internal/entity"
+	"github.com/mzhn-sochi/gateway/internal/entity/dto"
 	"github.com/mzhn-sochi/gateway/pkg/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -47,13 +48,13 @@ func New(config *config.Config, logger *slog.Logger) *Service {
 	}
 }
 
-func (s *Service) SignIn(ctx context.Context, phone, password string) (*entity.Tokens, error) {
+func (s *Service) SignIn(ctx context.Context, credentials *entity.UserCredentials) (*entity.Tokens, error) {
 
 	logger := ctx.Value(middleware.LOGGER).(*slog.Logger).With("service", "auth").With("method", "SignIn")
 
 	req := &auth.SignInRequest{
-		Phone:    phone,
-		Password: password,
+		Phone:    credentials.Phone,
+		Password: credentials.Password,
 	}
 
 	res, err := s.client.SignIn(ctx, req)
@@ -68,12 +69,15 @@ func (s *Service) SignIn(ctx context.Context, phone, password string) (*entity.T
 	}, nil
 }
 
-func (s *Service) SignUp(ctx context.Context, phone, password string) (*entity.Tokens, error) {
+func (s *Service) SignUp(ctx context.Context, user *dto.RegisterUser) (*entity.Tokens, error) {
 	logger := ctx.Value(middleware.LOGGER).(*slog.Logger).With("service", "auth").With("method", "SignUp")
 
 	req := &auth.SignUpRequest{
-		Phone:    phone,
-		Password: password,
+		Phone:      user.Phone,
+		Password:   user.Password,
+		LastName:   user.LastName,
+		FirstName:  user.FirstName,
+		MiddleName: user.MiddleName,
 	}
 
 	res, err := s.client.SignUp(ctx, req)
