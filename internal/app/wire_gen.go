@@ -27,7 +27,7 @@ func InitApp() *App {
 	authController := controllers.NewAuthController(service)
 	ticketserviceService := ticketservice.New(configConfig, slogLogger)
 	s3Service := s3service.New(configConfig, slogLogger)
-	ticketController := controllers.NewTicketController(ticketserviceService, s3Service)
+	ticketController := controllers.NewTicketController(ticketserviceService, s3Service, service)
 	app := newApp(configConfig, slogLogger, suggestionsController, authController, ticketController)
 	return app
 }

@@ -27,6 +27,8 @@ type AuthClient interface {
 	SignOut(ctx context.Context, in *SignOutRequest, opts ...grpc.CallOption) (*Empty, error)
 	Auth(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*AuthResponse, error)
 	Refresh(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*Tokens, error)
+	FindUserById(ctx context.Context, in *FindUserByIdRequest, opts ...grpc.CallOption) (*User, error)
+	FindUsersByIds(ctx context.Context, in *FindUsersByIdsRequest, opts ...grpc.CallOption) (*FindUsersByIdsResponse, error)
 }
 
 type authClient struct {
@@ -82,6 +84,24 @@ func (c *authClient) Refresh(ctx context.Context, in *RefreshRequest, opts ...gr
 	return out, nil
 }
 
+func (c *authClient) FindUserById(ctx context.Context, in *FindUserByIdRequest, opts ...grpc.CallOption) (*User, error) {
+	out := new(User)
+	err := c.cc.Invoke(ctx, "/auth.Auth/FindUserById", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) FindUsersByIds(ctx context.Context, in *FindUsersByIdsRequest, opts ...grpc.CallOption) (*FindUsersByIdsResponse, error) {
+	out := new(FindUsersByIdsResponse)
+	err := c.cc.Invoke(ctx, "/auth.Auth/FindUsersByIds", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServer is the server API for Auth service.
 // All implementations must embed UnimplementedAuthServer
 // for forward compatibility
@@ -91,6 +111,8 @@ type AuthServer interface {
 	SignOut(context.Context, *SignOutRequest) (*Empty, error)
 	Auth(context.Context, *AuthRequest) (*AuthResponse, error)
 	Refresh(context.Context, *RefreshRequest) (*Tokens, error)
+	FindUserById(context.Context, *FindUserByIdRequest) (*User, error)
+	FindUsersByIds(context.Context, *FindUsersByIdsRequest) (*FindUsersByIdsResponse, error)
 	mustEmbedUnimplementedAuthServer()
 }
 
@@ -112,6 +134,12 @@ func (UnimplementedAuthServer) Auth(context.Context, *AuthRequest) (*AuthRespons
 }
 func (UnimplementedAuthServer) Refresh(context.Context, *RefreshRequest) (*Tokens, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Refresh not implemented")
+}
+func (UnimplementedAuthServer) FindUserById(context.Context, *FindUserByIdRequest) (*User, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindUserById not implemented")
+}
+func (UnimplementedAuthServer) FindUsersByIds(context.Context, *FindUsersByIdsRequest) (*FindUsersByIdsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindUsersByIds not implemented")
 }
 func (UnimplementedAuthServer) mustEmbedUnimplementedAuthServer() {}
 
@@ -216,6 +244,42 @@ func _Auth_Refresh_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Auth_FindUserById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindUserByIdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).FindUserById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/FindUserById",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).FindUserById(ctx, req.(*FindUserByIdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_FindUsersByIds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindUsersByIdsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).FindUsersByIds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/FindUsersByIds",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).FindUsersByIds(ctx, req.(*FindUsersByIdsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Auth_ServiceDesc is the grpc.ServiceDesc for Auth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -242,6 +306,14 @@ var Auth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Refresh",
 			Handler:    _Auth_Refresh_Handler,
+		},
+		{
+			MethodName: "FindUserById",
+			Handler:    _Auth_FindUserById_Handler,
+		},
+		{
+			MethodName: "FindUsersByIds",
+			Handler:    _Auth_FindUsersByIds_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

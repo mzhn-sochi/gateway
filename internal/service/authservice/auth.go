@@ -165,3 +165,25 @@ func (s *Service) Authenticate(ctx context.Context, accessToken string, role aut
 		Role: entity.Role(response.Role),
 	}, nil
 }
+
+func (s *Service) FindById(ctx context.Context, id string) (*entity.User, error) {
+	logger := ctx.Value(middleware.LOGGER).(*slog.Logger).With("service", "auth").With("method", "FindUserById")
+	logger.Debug("trying to find user by id", slog.String("id", id))
+
+	req := &auth.FindUserByIdRequest{
+		Id: id,
+	}
+
+	response, err := s.client.FindUserById(ctx, req)
+	if err != nil {
+		logger.Debug("error with find user by id", slog.String("err", err.Error()))
+		return nil, err
+	}
+
+	return &entity.User{
+		Phone:      response.Phone,
+		LastName:   response.LastName,
+		FirstName:  response.FirstName,
+		MiddleName: response.MiddleName,
+	}, nil
+}

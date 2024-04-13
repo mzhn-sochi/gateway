@@ -26,6 +26,7 @@ func InitApp() *App {
 
 		wire.NewSet(authservice.New),
 		wire.Bind(new(controllers.AuthService), new(*authservice.Service)),
+		wire.Bind(new(controllers.UserFinder), new(*authservice.Service)),
 		wire.NewSet(controllers.NewAuthController),
 
 		wire.NewSet(ticketservice.New),

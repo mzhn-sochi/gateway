@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/mzhn-sochi/gateway/internal/entity/dto"
 	"log/slog"
 
 	"github.com/go-playground/validator/v10"
@@ -15,25 +16,29 @@ type TicketsService interface {
 	Find(ctx context.Context, id string) (*entity.Ticket, error)
 	List(ctx context.Context, filters *entity.TicketFilters) ([]*entity.Ticket, uint64, error)
 	Create(ctx context.Context, userId string, url string, addr string) (string, error)
-	//Update(t *ts.Ticket) error
-	//Delete(id string) error
 }
 
 type FileUploader interface {
 	Upload(ctx context.Context, reader file.Reader) (string, error)
 }
 
+type UserFinder interface {
+	FindById(ctx context.Context, id string) (*entity.User, error)
+}
+
 type TicketController struct {
 	service      TicketsService
 	fileUploader FileUploader
 	validator    *validator.Validate
+	userFinder   UserFinder
 }
 
-func NewTicketController(service TicketsService, fileUploader FileUploader) *TicketController {
+func NewTicketController(service TicketsService, fileUploader FileUploader, userFinder UserFinder) *TicketController {
 	return &TicketController{
 		service:      service,
 		validator:    validator.New(),
 		fileUploader: fileUploader,
+		userFinder:   userFinder,
 	}
 }
 
@@ -63,8 +68,8 @@ func (c *TicketController) List() fiber.Handler {
 	}
 
 	type response struct {
-		Tickets []*entity.Ticket `json:"tickets"`
-		Total   uint64           `json:"total"`
+		Tickets []*dto.Ticket `json:"tickets"`
+		Total   uint64        `json:"total"`
 	}
 
 	return func(ctx *fiber.Ctx) error {
@@ -89,13 +94,27 @@ func (c *TicketController) List() fiber.Handler {
 			filters.UserId = &q.UserId
 		}
 
+		tt := make([]*dto.Ticket, 0)
+
 		tickets, total, err := c.service.List(ctx.Context(), filters)
 		if err != nil {
 			return internal(err.Error())
 		}
 
+		for _, t := range tickets {
+			user, err := c.userFinder.FindById(ctx.Context(), t.UserId)
+			if err != nil {
+				return err
+			}
+			ticket := &dto.Ticket{
+				Ticket: t,
+				User:   user,
+			}
+
+			tt = append(tt, ticket)
+		}
 		return ok(ctx, &response{
-			Tickets: tickets,
+			Tickets: tt,
 			Total:   total,
 		})
 	}
@@ -131,12 +150,27 @@ func (c *TicketController) ListUsers() fiber.Handler {
 
 		logger.Debug("list users")
 
+		tt := make([]*dto.Ticket, 0)
+
 		tickets, _, err := c.service.List(ctx.Context(), filters)
 		if err != nil {
 			return internal(err.Error())
 		}
 
-		return ok(ctx, tickets)
+		for _, t := range tickets {
+			user, err := c.userFinder.FindById(ctx.Context(), t.UserId)
+			if err != nil {
+				return err
+			}
+			ticket := &dto.Ticket{
+				Ticket: t,
+				User:   user,
+			}
+
+			tt = append(tt, ticket)
+		}
+
+		return ok(ctx, tt)
 	}
 }
 
