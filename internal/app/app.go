@@ -18,7 +18,6 @@ type App struct {
 	config *config.Config
 	logger *slog.Logger
 
-	analyzerController    *controllers.AnalyzerController
 	suggestionsController *controllers.SuggestionsController
 	AuthController        *controllers.AuthController
 	ticketController      *controllers.TicketController
@@ -27,7 +26,6 @@ type App struct {
 func newApp(
 	config *config.Config,
 	log *slog.Logger,
-	analyzerController *controllers.AnalyzerController,
 	suggestionsController *controllers.SuggestionsController,
 	authController *controllers.AuthController,
 	ticketController *controllers.TicketController,
@@ -56,7 +54,6 @@ func newApp(
 		app:                   app,
 		config:                config,
 		logger:                log,
-		analyzerController:    analyzerController,
 		suggestionsController: suggestionsController,
 		AuthController:        authController,
 		ticketController:      ticketController,
@@ -86,12 +83,12 @@ func (a *App) Run() error {
 	au.Post("/sign-out", a.AuthController.AuthRequired(auth.Role_user), a.AuthController.SignOut())
 	au.Post("/refresh", a.AuthController.AuthRequired(auth.Role_user), a.AuthController.Refresh())
 
-	v1.Post("/analyze", a.analyzerController.Analyze())
 	v1.Post("/suggestions", a.suggestionsController.GetSuggestions())
 
 	tt := v1.Group("/tickets")
 	tt.Get("/", a.ticketController.List())
 	tt.Get("/:id", a.ticketController.Find())
+	tt.Post("/", a.ticketController.Create())
 
 	a.logger.Info("server started", slog.String("host", host), slog.Int("port", port))
 	return a.app.Listen(fmt.Sprintf("%s:%d", host, port))
