@@ -17,6 +17,7 @@ type Ticket struct {
 	UserId      string  `json:"userId"`
 	Status      Role    `json:"status"`
 	ImageUrl    string  `json:"imageUrl"`
+	ShopName    string  `json:"shopName"`
 	ShopAddress string  `json:"shopAddress"`
 	CreatedAt   int64   `json:"createdAt"`
 	UpdatedAt   *int64  `json:"updatedAt"`
