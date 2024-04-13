@@ -17,3 +17,13 @@ type TicketFilters struct {
 	Status *string `json:"status"`
 	UserId *string `json:"user_id"`
 }
+
+type Ticket struct {
+	Id          string `json:"id"`
+	UserId      string `json:"userId"`
+	Status      Role   `json:"status"`
+	ImageUrl    string `json:"imageUrl"`
+	ShopAddress string `json:"shopAddress"`
+	CreatedAt   int64  `json:"createdAt"`
+	UpdatedAt   *int64 `json:"updatedAt"`
+}

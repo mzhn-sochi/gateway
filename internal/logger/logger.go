@@ -8,7 +8,7 @@ import (
 )
 
 func New(config *config.Config) *slog.Logger {
-	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: getLevel(config.LogLevel)}))
+	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: getLevel(config.LogLevel)}))
 }
 
 func getLevel(level string) slog.Level {

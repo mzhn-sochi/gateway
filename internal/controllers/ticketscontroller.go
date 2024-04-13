@@ -6,15 +6,14 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/mzhn-sochi/gateway/api/ts"
 	"github.com/mzhn-sochi/gateway/internal/entity"
 	"github.com/mzhn-sochi/gateway/pkg/file"
 	"github.com/mzhn-sochi/gateway/pkg/middleware"
 )
 
 type TicketsService interface {
-	Find(ctx context.Context, id string) (*ts.Ticket, error)
-	List(ctx context.Context, filters *entity.TicketFilters) ([]*ts.Ticket, uint64, error)
+	Find(ctx context.Context, id string) (*entity.Ticket, error)
+	List(ctx context.Context, filters *entity.TicketFilters) ([]*entity.Ticket, uint64, error)
 	Create(ctx context.Context, userId string, url string) (string, error)
 	//Update(t *ts.Ticket) error
 	//Delete(id string) error
@@ -64,8 +63,8 @@ func (c *TicketController) List() fiber.Handler {
 	}
 
 	type response struct {
-		Tickets []*ts.Ticket `json:"tickets"`
-		Total   uint64       `json:"count"`
+		Tickets []*entity.Ticket `json:"tickets"`
+		Total   uint64           `json:"total"`
 	}
 
 	return func(ctx *fiber.Ctx) error {
@@ -99,6 +98,45 @@ func (c *TicketController) List() fiber.Handler {
 			Tickets: tickets,
 			Total:   total,
 		})
+	}
+}
+
+func (c *TicketController) ListUsers() fiber.Handler {
+
+	type query struct {
+		Limit  uint64 `query:"limit"`
+		Offset uint64 `query:"offset"`
+	}
+
+	return func(ctx *fiber.Ctx) error {
+		logger := ctx.Locals(middleware.LOGGER).(*slog.Logger).With("service", "tickets").With("method", "ListUsers")
+		ctx.Locals(middleware.LOGGER, logger)
+
+		var q query
+		if err := ctx.QueryParser(&q); err != nil {
+			return err
+		}
+
+		logger.Debug("list tickets of users", slog.Uint64("limit", q.Limit), slog.Uint64("offset", q.Offset))
+
+		u := ctx.Locals("user").(*entity.UserClaims)
+
+		filters := &entity.TicketFilters{
+			Filters: entity.Filters{
+				Limit:  q.Limit,
+				Offset: q.Offset,
+			},
+			UserId: &u.Id,
+		}
+
+		logger.Debug("list users")
+
+		tickets, _, err := c.service.List(ctx.Context(), filters)
+		if err != nil {
+			return internal(err.Error())
+		}
+
+		return ok(ctx, tickets)
 	}
 }
 

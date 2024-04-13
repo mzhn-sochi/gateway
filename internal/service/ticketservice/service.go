@@ -6,7 +6,6 @@ import (
 	"github.com/mzhn-sochi/gateway/api/share"
 	"github.com/mzhn-sochi/gateway/api/ts"
 	"github.com/mzhn-sochi/gateway/internal/config"
-	"github.com/mzhn-sochi/gateway/internal/controllers"
 	"github.com/mzhn-sochi/gateway/internal/entity"
 	"github.com/mzhn-sochi/gateway/pkg/middleware"
 	"google.golang.org/grpc"
@@ -14,7 +13,7 @@ import (
 	"log/slog"
 )
 
-var _ controllers.TicketsService = (*Service)(nil)
+//var _ controllers.TicketsService = (*Service)(nil)
 
 type Service struct {
 	config *config.Config
@@ -47,7 +46,7 @@ func New(config *config.Config, logger *slog.Logger) *Service {
 	}
 }
 
-func (s *Service) Find(ctx context.Context, id string) (*ts.Ticket, error) {
+func (s *Service) Find(ctx context.Context, id string) (*entity.Ticket, error) {
 	req := &ts.FindByIdRequest{TicketId: id}
 
 	ticket, err := s.client.FindById(ctx, req)
@@ -55,9 +54,16 @@ func (s *Service) Find(ctx context.Context, id string) (*ts.Ticket, error) {
 		return nil, err
 	}
 
-	return ticket, nil
+	return &entity.Ticket{
+		Id:          ticket.Id,
+		UserId:      ticket.UserId,
+		Status:      entity.Role(ticket.Status),
+		ShopAddress: ticket.ShopAddress,
+		CreatedAt:   ticket.CreatedAt,
+		UpdatedAt:   ticket.UpdatedAt,
+	}, nil
 }
-func (s *Service) List(ctx context.Context, filters *entity.TicketFilters) ([]*ts.Ticket, uint64, error) {
+func (s *Service) List(ctx context.Context, filters *entity.TicketFilters) ([]*entity.Ticket, uint64, error) {
 
 	logger := ctx.Value(middleware.LOGGER).(*slog.Logger)
 
@@ -77,7 +83,22 @@ func (s *Service) List(ctx context.Context, filters *entity.TicketFilters) ([]*t
 		return nil, 0, err
 	}
 
-	return response.Tickets, uint64(response.Count), nil
+	logger.Debug("ticket service list response", slog.Any("response", response))
+
+	tt := make([]*entity.Ticket, 0, len(response.Tickets))
+	for _, t := range response.Tickets {
+		tt = append(tt, &entity.Ticket{
+			Id:          t.Id,
+			UserId:      t.UserId,
+			Status:      entity.Role(t.Status),
+			ImageUrl:    t.ImageUrl,
+			ShopAddress: t.ShopAddress,
+			CreatedAt:   t.CreatedAt,
+			UpdatedAt:   t.UpdatedAt,
+		})
+	}
+
+	return tt, uint64(response.Count), nil
 }
 func (s *Service) Create(ctx context.Context, userId string, url string) (string, error) {
 	l := ctx.Value(middleware.LOGGER).(*slog.Logger).With("service", "ts").With("method", "create")
