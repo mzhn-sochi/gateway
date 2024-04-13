@@ -6,6 +6,7 @@ package app
 import (
 	"github.com/mzhn-sochi/gateway/internal/config"
 	"github.com/mzhn-sochi/gateway/internal/logger"
+	"github.com/mzhn-sochi/gateway/internal/service/authservice"
 	"github.com/mzhn-sochi/gateway/internal/service/suggestions"
 
 	"github.com/google/wire"
@@ -24,5 +25,9 @@ func InitApp() *App {
 
 		wire.NewSet(suggestions.New),
 		wire.NewSet(controllers.NewSuggestionsController),
+
+		wire.NewSet(authservice.New),
+		wire.Bind(new(controllers.AuthService), new(*authservice.Service)),
+		wire.NewSet(controllers.NewAuthController),
 	))
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/mzhn-sochi/gateway/internal/controllers"
 	"github.com/mzhn-sochi/gateway/internal/logger"
 	"github.com/mzhn-sochi/gateway/internal/service/analyzerservice"
+	"github.com/mzhn-sochi/gateway/internal/service/authservice"
 	"github.com/mzhn-sochi/gateway/internal/service/suggestions"
 )
 
@@ -23,6 +24,8 @@ func InitApp() *App {
 	analyzerController := controllers.NewAnalyzerController(service)
 	suggestionsService := suggestions.New(configConfig, slogLogger)
 	suggestionsController := controllers.NewSuggestionsController(suggestionsService)
-	app := newApp(configConfig, slogLogger, analyzerController, suggestionsController)
+	authserviceService := authservice.New(configConfig, slogLogger)
+	authController := controllers.NewAuthController(authserviceService)
+	app := newApp(configConfig, slogLogger, analyzerController, suggestionsController, authController)
 	return app
 }

@@ -24,10 +24,10 @@ func NewSuggestionsController(service SuggestionsService) *SuggestionsController
 }
 
 func (c *SuggestionsController) Register(router fiber.Router) {
-	router.Get("/suggestions", c.getSuggestions())
+	router.Get("/suggestions", c.GetSuggestions())
 }
 
-func (c *SuggestionsController) getSuggestions() fiber.Handler {
+func (c *SuggestionsController) GetSuggestions() fiber.Handler {
 	type suggestionsReq struct {
 		Lon   float32 `query:"lon" validate:"required"`
 		Lat   float32 `query:"lat" validate:"required"`

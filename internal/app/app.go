@@ -3,15 +3,14 @@ package app
 import (
 	"errors"
 	"fmt"
-	"log/slog"
-	"reflect"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/mzhn-sochi/gateway/api/auth"
 	"github.com/mzhn-sochi/gateway/internal/config"
 	"github.com/mzhn-sochi/gateway/internal/controllers"
 	"github.com/mzhn-sochi/gateway/pkg/middleware"
+	"log/slog"
 )
 
 type App struct {
@@ -19,13 +18,18 @@ type App struct {
 	config *config.Config
 	logger *slog.Logger
 
-	controllers []controllers.Controller
+	analyzerController    *controllers.AnalyzerController
+	suggestionsController *controllers.SuggestionsController
+	AuthController        *controllers.AuthController
 }
 
-func newApp(config *config.Config, log *slog.Logger,
+func newApp(
+	config *config.Config,
+	log *slog.Logger,
 	analyzerController *controllers.AnalyzerController,
-	suggestionsController *controllers.SuggestionsController) *App {
-
+	suggestionsController *controllers.SuggestionsController,
+	authController *controllers.AuthController,
+) *App {
 	app := fiber.New(fiber.Config{
 		AppName:       "sochya-gateway",
 		CaseSensitive: true,
@@ -47,13 +51,12 @@ func newApp(config *config.Config, log *slog.Logger,
 	})
 
 	return &App{
-		app:    app,
-		config: config,
-		logger: log,
-		controllers: []controllers.Controller{
-			analyzerController,
-			suggestionsController,
-		},
+		app:                   app,
+		config:                config,
+		logger:                log,
+		analyzerController:    analyzerController,
+		suggestionsController: suggestionsController,
+		AuthController:        authController,
 	}
 }
 
@@ -64,6 +67,7 @@ func (a *App) Run() error {
 
 	a.app.Use(logger.New())
 	a.app.Use(middleware.AttachRequestId())
+	a.app.Use(middleware.AttachLogger(a.logger))
 
 	a.app.Use(cors.New(cors.Config{
 		AllowOrigins:     "https://localhost:5173, http://localhost:5173",
@@ -73,10 +77,14 @@ func (a *App) Run() error {
 
 	v1 := a.app.Group("/api/v1")
 
-	for _, c := range a.controllers {
-		a.logger.Debug(fmt.Sprintf("register %s", reflect.TypeOf(c).Elem().Name()))
-		c.Register(v1)
-	}
+	au := v1.Group("/auth")
+	au.Post("/sign-in", a.AuthController.SignIn())
+	au.Post("/sign-up", a.AuthController.SignUp())
+	au.Post("/sign-out", a.AuthController.AuthRequired(auth.Role_user), a.AuthController.SignOut())
+	au.Post("/refresh", a.AuthController.AuthRequired(auth.Role_user), a.AuthController.Refresh())
+
+	v1.Post("/analyze", a.analyzerController.Analyze())
+	v1.Post("/suggestions", a.suggestionsController.GetSuggestions())
 
 	a.logger.Info("server started", slog.String("host", host), slog.Int("port", port))
 	return a.app.Listen(fmt.Sprintf("%s:%d", host, port))
