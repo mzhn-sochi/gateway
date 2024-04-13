@@ -166,11 +166,16 @@ func (c *TicketController) ListUsers() fiber.Handler {
 			return internal(err.Error())
 		}
 
+		var user *entity.User
+
 		for _, t := range tickets {
-			user, err := c.userFinder.FindById(ctx.Context(), t.UserId)
-			if err != nil {
-				return err
+			if user == nil {
+				user, err = c.userFinder.FindById(ctx.Context(), t.UserId)
+				if err != nil {
+					return err
+				}
 			}
+
 			ticket := &dto.Ticket{
 				Ticket: t,
 				User:   user,
