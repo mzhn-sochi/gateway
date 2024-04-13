@@ -84,10 +84,6 @@ func (a *AuthController) SignUp() fiber.Handler {
 		Password string `json:"password" validate:"required"`
 	}
 
-	type response struct {
-		AccessToken string `json:"accessToken"`
-	}
-
 	return func(ctx *fiber.Ctx) error {
 
 		var req request
@@ -110,18 +106,7 @@ func (a *AuthController) SignUp() fiber.Handler {
 			return internal(err.Error())
 		}
 
-		// TODO add expiration
-		cookie := &fiber.Cookie{
-			Name:     "refresh_token",
-			Value:    tokens.Refresh,
-			HTTPOnly: true,
-			SameSite: "none",
-		}
-		ctx.Cookie(cookie)
-
-		return ok(ctx, &response{
-			AccessToken: tokens.Access,
-		})
+		return ok(ctx, tokens)
 	}
 }
 
@@ -146,10 +131,6 @@ func (a *AuthController) SignOut() fiber.Handler {
 
 func (a *AuthController) Refresh() fiber.Handler {
 
-	type response struct {
-		AccessToken string `json:"accessToken"`
-	}
-
 	return func(ctx *fiber.Ctx) error {
 		logger := ctx.Context().Value(middleware.LOGGER).(*slog.Logger).With("controller", "auth").With("method", "refresh")
 
@@ -165,18 +146,7 @@ func (a *AuthController) Refresh() fiber.Handler {
 			return internal(err.Error())
 		}
 
-		// TODO add expiration
-		cookie := &fiber.Cookie{
-			Name:     "refresh_token",
-			Value:    tokens.Refresh,
-			HTTPOnly: true,
-			SameSite: "none",
-		}
-		ctx.Cookie(cookie)
-
-		return ok(ctx, &response{
-			AccessToken: tokens.Access,
-		})
+		return ok(ctx, tokens)
 	}
 }
 
