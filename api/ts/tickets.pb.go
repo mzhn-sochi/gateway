@@ -7,7 +7,7 @@
 package ts
 
 import (
-	share "api/share"
+	share "github.com/mzhn-sochi/gateway/api/share"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
