@@ -55,7 +55,16 @@ func (c *TicketController) Find() fiber.Handler {
 			return internal(err.Error())
 		}
 
-		return ok(ctx, t)
+		user, err := c.userFinder.FindById(ctx.Context(), t.UserId)
+		if err != nil {
+			return err
+		}
+		ticket := &dto.Ticket{
+			Ticket: t,
+			User:   user,
+		}
+
+		return ok(ctx, ticket)
 	}
 }
 
