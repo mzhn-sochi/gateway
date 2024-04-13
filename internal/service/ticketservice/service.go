@@ -62,6 +62,7 @@ func (s *Service) Find(ctx context.Context, id string) (*entity.Ticket, error) {
 		ShopAddress: ticket.ShopAddress,
 		CreatedAt:   ticket.CreatedAt,
 		UpdatedAt:   ticket.UpdatedAt,
+		Reason:      ticket.Reason,
 	}, nil
 }
 func (s *Service) List(ctx context.Context, filters *entity.TicketFilters) ([]*entity.Ticket, uint64, error) {
@@ -96,6 +97,7 @@ func (s *Service) List(ctx context.Context, filters *entity.TicketFilters) ([]*e
 			ShopAddress: t.ShopAddress,
 			CreatedAt:   t.CreatedAt,
 			UpdatedAt:   t.UpdatedAt,
+			Reason:      t.Reason,
 		})
 	}
 

@@ -212,7 +212,7 @@ func (a *AuthController) AuthRequired(role auth.Role) fiber.Handler {
 			}
 
 			if errors.Is(err, authservice.ErrNotFound) {
-				return forbidden(err.Error())
+				return unauthorized(err.Error())
 			}
 
 			if errors.Is(err, authservice.ErrInvalidRequest) {
