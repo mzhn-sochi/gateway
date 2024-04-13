@@ -14,7 +14,7 @@ import (
 type TicketsService interface {
 	Find(ctx context.Context, id string) (*entity.Ticket, error)
 	List(ctx context.Context, filters *entity.TicketFilters) ([]*entity.Ticket, uint64, error)
-	Create(ctx context.Context, userId string, url string) (string, error)
+	Create(ctx context.Context, userId string, url string, addr string) (string, error)
 	//Update(t *ts.Ticket) error
 	//Delete(id string) error
 }
@@ -143,6 +143,11 @@ func (c *TicketController) ListUsers() fiber.Handler {
 func (c *TicketController) Create() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 
+		addr := ctx.FormValue("address", "")
+		if addr == "" {
+			return bad("address is required")
+		}
+
 		f, err := ctx.FormFile("pricetag")
 		if err != nil {
 			return bad(err.Error())
@@ -172,7 +177,7 @@ func (c *TicketController) Create() fiber.Handler {
 			uid = u.Id
 		}
 
-		ticketId, err := c.service.Create(ctx.Context(), uid, url)
+		ticketId, err := c.service.Create(ctx.Context(), uid, url, addr)
 		if err != nil {
 			return internal(err.Error())
 		}

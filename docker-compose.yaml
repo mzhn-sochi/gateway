@@ -8,11 +8,4 @@ services:
       - .env
     ports:
       - "8080:8080"
-    networks:
-      - main
 
-
-networks:
-  main:
-    external:
-      name: main

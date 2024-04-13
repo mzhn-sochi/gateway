@@ -100,12 +100,13 @@ func (s *Service) List(ctx context.Context, filters *entity.TicketFilters) ([]*e
 
 	return tt, uint64(response.Count), nil
 }
-func (s *Service) Create(ctx context.Context, userId string, url string) (string, error) {
+func (s *Service) Create(ctx context.Context, userId string, url string, addr string) (string, error) {
 	l := ctx.Value(middleware.LOGGER).(*slog.Logger).With("service", "ts").With("method", "create")
 
 	req := &ts.CreateRequest{
 		UserId:   userId,
 		ImageUrl: url,
+		ShopAddr: addr,
 	}
 
 	l.Debug("")
