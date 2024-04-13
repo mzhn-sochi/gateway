@@ -57,6 +57,7 @@ func (s *Service) Find(ctx context.Context, id string) (*entity.Ticket, error) {
 	return &entity.Ticket{
 		Id:          ticket.Id,
 		UserId:      ticket.UserId,
+		ImageUrl:    ticket.ImageUrl,
 		Status:      entity.Role(ticket.Status),
 		ShopAddress: ticket.ShopAddress,
 		CreatedAt:   ticket.CreatedAt,
