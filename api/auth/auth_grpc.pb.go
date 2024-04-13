@@ -25,7 +25,7 @@ type AuthClient interface {
 	SignIn(ctx context.Context, in *SignInRequest, opts ...grpc.CallOption) (*Tokens, error)
 	SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*Tokens, error)
 	SignOut(ctx context.Context, in *SignOutRequest, opts ...grpc.CallOption) (*Empty, error)
-	Auth(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*Empty, error)
+	Auth(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*AuthResponse, error)
 	Refresh(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*Tokens, error)
 }
 
@@ -64,8 +64,8 @@ func (c *authClient) SignOut(ctx context.Context, in *SignOutRequest, opts ...gr
 	return out, nil
 }
 
-func (c *authClient) Auth(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *authClient) Auth(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*AuthResponse, error) {
+	out := new(AuthResponse)
 	err := c.cc.Invoke(ctx, "/auth.Auth/Auth", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ type AuthServer interface {
 	SignIn(context.Context, *SignInRequest) (*Tokens, error)
 	SignUp(context.Context, *SignUpRequest) (*Tokens, error)
 	SignOut(context.Context, *SignOutRequest) (*Empty, error)
-	Auth(context.Context, *AuthRequest) (*Empty, error)
+	Auth(context.Context, *AuthRequest) (*AuthResponse, error)
 	Refresh(context.Context, *RefreshRequest) (*Tokens, error)
 	mustEmbedUnimplementedAuthServer()
 }
@@ -107,7 +107,7 @@ func (UnimplementedAuthServer) SignUp(context.Context, *SignUpRequest) (*Tokens,
 func (UnimplementedAuthServer) SignOut(context.Context, *SignOutRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SignOut not implemented")
 }
-func (UnimplementedAuthServer) Auth(context.Context, *AuthRequest) (*Empty, error) {
+func (UnimplementedAuthServer) Auth(context.Context, *AuthRequest) (*AuthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Auth not implemented")
 }
 func (UnimplementedAuthServer) Refresh(context.Context, *RefreshRequest) (*Tokens, error) {

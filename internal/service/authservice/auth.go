@@ -122,7 +122,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*entity.Tok
 	}, nil
 }
 
-func (s *Service) Authenticate(ctx context.Context, accessToken string, role auth.Role) error {
+func (s *Service) Authenticate(ctx context.Context, accessToken string, role auth.Role) (*entity.UserClaims, error) {
 	logger := ctx.Value(middleware.LOGGER).(*slog.Logger).With("service", "auth").With("method", "Auth")
 
 	req := &auth.AuthRequest{
@@ -132,7 +132,8 @@ func (s *Service) Authenticate(ctx context.Context, accessToken string, role aut
 
 	logger.Debug("trying to auth", slog.String("role", role.String()), slog.String("accessToken", accessToken))
 
-	if _, err := s.client.Auth(ctx, req); err != nil {
+	response, err := s.client.Auth(ctx, req)
+	if err != nil {
 
 		if e, ok := status.FromError(err); ok {
 			logger.Debug("error with auth",
@@ -143,21 +144,24 @@ func (s *Service) Authenticate(ctx context.Context, accessToken string, role aut
 
 			switch e.Code() {
 			case codes.Unauthenticated:
-				return ErrUnauthorized
+				return nil, ErrUnauthorized
 			case codes.PermissionDenied:
-				return ErrForbidden
+				return nil, ErrForbidden
 			case codes.NotFound:
-				return ErrNotFound
+				return nil, ErrNotFound
 			case codes.InvalidArgument:
-				return ErrInvalidRequest
+				return nil, ErrInvalidRequest
 			default:
-				return err
+				return nil, err
 			}
 		}
 
 		logger.Debug("error with auth", slog.String("err", err.Error()))
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &entity.UserClaims{
+		Id:   response.UserId,
+		Role: entity.Role(response.Role),
+	}, nil
 }

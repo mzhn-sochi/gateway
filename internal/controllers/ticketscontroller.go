@@ -129,7 +129,12 @@ func (c *TicketController) Create() fiber.Handler {
 			return internal(err.Error())
 		}
 
-		ticketId, err := c.service.Create(ctx.Context(), f.Filename, url)
+		uid := "test-user"
+		if u, ok := ctx.Locals("user").(*entity.UserClaims); ok {
+			uid = u.Id
+		}
+
+		ticketId, err := c.service.Create(ctx.Context(), uid, url)
 		if err != nil {
 			return internal(err.Error())
 		}

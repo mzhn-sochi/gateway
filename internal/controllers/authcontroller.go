@@ -17,7 +17,7 @@ type AuthService interface {
 	SignIn(ctx context.Context, phone, password string) (*entity.Tokens, error)
 	SignUp(ctx context.Context, phone, password string) (*entity.Tokens, error)
 	SignOut(ctx context.Context, accessToken string) error
-	Authenticate(ctx context.Context, accessToken string, role auth.Role) error
+	Authenticate(ctx context.Context, accessToken string, role auth.Role) (*entity.UserClaims, error)
 	Refresh(ctx context.Context, refreshToken string) (*entity.Tokens, error)
 }
 
@@ -195,7 +195,8 @@ func (a *AuthController) AuthRequired(role auth.Role) fiber.Handler {
 
 		accessToken := s[1]
 
-		if err := a.service.Authenticate(ctx.Context(), accessToken, role); err != nil {
+		u, err := a.service.Authenticate(ctx.Context(), accessToken, role)
+		if err != nil {
 
 			if errors.Is(err, authservice.ErrUnauthorized) {
 				return unauthorized(err.Error())
@@ -219,6 +220,7 @@ func (a *AuthController) AuthRequired(role auth.Role) fiber.Handler {
 		}
 
 		ctx.Locals("accessToken", accessToken)
+		ctx.Locals("user", u)
 
 		return ctx.Next()
 	}
