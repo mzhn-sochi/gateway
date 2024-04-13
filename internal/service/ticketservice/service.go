@@ -6,12 +6,15 @@ import (
 	"github.com/mzhn-sochi/gateway/api/share"
 	"github.com/mzhn-sochi/gateway/api/ts"
 	"github.com/mzhn-sochi/gateway/internal/config"
+	"github.com/mzhn-sochi/gateway/internal/controllers"
 	"github.com/mzhn-sochi/gateway/internal/entity"
 	"github.com/mzhn-sochi/gateway/pkg/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log/slog"
 )
+
+var _ controllers.TicketsService = (*Service)(nil)
 
 type Service struct {
 	config *config.Config
@@ -75,4 +78,20 @@ func (s *Service) List(ctx context.Context, filters *entity.TicketFilters) ([]*t
 	}
 
 	return response.Tickets, uint64(response.Count), nil
+}
+func (s *Service) Create(ctx context.Context, userId string, url string) (string, error) {
+	l := ctx.Value(middleware.LOGGER).(*slog.Logger).With("service", "ts").With("method", "create")
+
+	req := &ts.CreateRequest{
+		UserId:   userId,
+		ImageUrl: url,
+	}
+
+	l.Debug("")
+	response, err := s.client.Create(ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	return response.TicketId, nil
 }

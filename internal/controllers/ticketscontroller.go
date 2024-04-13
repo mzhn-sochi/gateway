@@ -2,29 +2,40 @@ package controllers
 
 import (
 	"context"
+	"log/slog"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mzhn-sochi/gateway/api/ts"
 	"github.com/mzhn-sochi/gateway/internal/entity"
+	"github.com/mzhn-sochi/gateway/pkg/file"
 	"github.com/mzhn-sochi/gateway/pkg/middleware"
-	"log/slog"
 )
 
 type TicketsService interface {
 	Find(ctx context.Context, id string) (*ts.Ticket, error)
 	List(ctx context.Context, filters *entity.TicketFilters) ([]*ts.Ticket, uint64, error)
-	//Create(t *ts.Ticket) error
+	Create(ctx context.Context, userId string, url string) (string, error)
 	//Update(t *ts.Ticket) error
 	//Delete(id string) error
 }
 
-type TicketController struct {
-	service   TicketsService
-	validator *validator.Validate
+type FileUploader interface {
+	Upload(ctx context.Context, reader file.Reader) (string, error)
 }
 
-func NewTicketController(service TicketsService) *TicketController {
-	return &TicketController{service: service, validator: validator.New()}
+type TicketController struct {
+	service      TicketsService
+	fileUploader FileUploader
+	validator    *validator.Validate
+}
+
+func NewTicketController(service TicketsService, fileUploader FileUploader) *TicketController {
+	return &TicketController{
+		service:      service,
+		validator:    validator.New(),
+		fileUploader: fileUploader,
+	}
 }
 
 func (c *TicketController) Find() fiber.Handler {
@@ -88,5 +99,41 @@ func (c *TicketController) List() fiber.Handler {
 			Tickets: tickets,
 			Total:   total,
 		})
+	}
+}
+
+func (c *TicketController) Create() fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+
+		f, err := ctx.FormFile("pricetag")
+		if err != nil {
+			return bad(err.Error())
+		}
+
+		logger := ctx.Locals(middleware.LOGGER).(*slog.Logger).With("service", "tickets").With("method", "Create")
+		ctx.Locals(middleware.LOGGER, logger)
+
+		reader, err := f.Open()
+		if err != nil {
+			return internal(err.Error())
+		}
+
+		ctype := f.Header.Get("Content-Type")
+		logger.Debug("upload file", slog.String("file", f.Filename), slog.String("content-type", ctype))
+
+		r := file.NewReader(reader, f.Size, ctype)
+		logger.Debug("upload file", slog.String("file", f.Filename))
+
+		url, err := c.fileUploader.Upload(ctx.Context(), r)
+		if err != nil {
+			return internal(err.Error())
+		}
+
+		ticketId, err := c.service.Create(ctx.Context(), f.Filename, url)
+		if err != nil {
+			return internal(err.Error())
+		}
+
+		return ok(ctx, ticketId)
 	}
 }

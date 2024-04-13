@@ -31,6 +31,11 @@ type Config struct {
 			Host string `env:"AUTH_SERVICE_HOST" env-default:"localhost"`
 			Port int    `env:"AUTH_SERVICE_PORT" env-default:"50053"`
 		}
+
+		S3Service struct {
+			Host string `env:"S3_SERVICE_HOST" env-default:"localhost"`
+			Port int    `env:"S3_SERVICE_PORT" env-default:"50054"`
+		}
 	}
 
 	LogLevel string `env:"LOG_LEVEL" env-default:"debug"`

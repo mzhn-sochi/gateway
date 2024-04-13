@@ -7,12 +7,12 @@ import (
 	"github.com/mzhn-sochi/gateway/internal/config"
 	"github.com/mzhn-sochi/gateway/internal/logger"
 	"github.com/mzhn-sochi/gateway/internal/service/authservice"
+	"github.com/mzhn-sochi/gateway/internal/service/s3service"
 	"github.com/mzhn-sochi/gateway/internal/service/suggestions"
 	"github.com/mzhn-sochi/gateway/internal/service/ticketservice"
 
 	"github.com/google/wire"
 	"github.com/mzhn-sochi/gateway/internal/controllers"
-	"github.com/mzhn-sochi/gateway/internal/service/analyzerservice"
 )
 
 func InitApp() *App {
@@ -20,9 +20,6 @@ func InitApp() *App {
 		newApp,
 		wire.NewSet(logger.New),
 		wire.NewSet(config.New),
-		wire.NewSet(controllers.NewAnalyzerController),
-		wire.Bind(new(controllers.AnalyzerService), new(*analyzerservice.Service)),
-		wire.NewSet(analyzerservice.New),
 
 		wire.NewSet(suggestions.New),
 		wire.NewSet(controllers.NewSuggestionsController),
@@ -32,7 +29,9 @@ func InitApp() *App {
 		wire.NewSet(controllers.NewAuthController),
 
 		wire.NewSet(ticketservice.New),
+		wire.NewSet(s3service.New),
 		wire.Bind(new(controllers.TicketsService), new(*ticketservice.Service)),
+		wire.Bind(new(controllers.FileUploader), new(*s3service.S3Service)),
 		wire.NewSet(controllers.NewTicketController),
 	))
 }
