@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/mzhn-sochi/gateway/internal/entity"
 	"github.com/mzhn-sochi/gateway/pkg/file"
@@ -22,11 +21,7 @@ func NewAnalyzerController(service AnalyzerService) *AnalyzerController {
 	}
 }
 
-func (c *AnalyzerController) Register(router fiber.Router) {
-	router.Post("/analyze", c.analyze())
-}
-
-func (c *AnalyzerController) analyze() fiber.Handler {
+func (c *AnalyzerController) Analyze() fiber.Handler {
 
 	return func(ctx *fiber.Ctx) error {
 
