@@ -7,7 +7,6 @@
 package ts
 
 import (
-	share "github.com/mzhn-sochi/gateway/api/share"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -26,7 +25,10 @@ type TicketServiceClient interface {
 	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error)
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 	FindById(ctx context.Context, in *FindByIdRequest, opts ...grpc.CallOption) (*Ticket, error)
-	CloseTicket(ctx context.Context, in *CloseTicketRequest, opts ...grpc.CallOption) (*share.Empty, error)
+	CloseTicket(ctx context.Context, in *CloseTicketRequest, opts ...grpc.CallOption) (*Empty, error)
+	GetUserSummary(ctx context.Context, in *Empty, opts ...grpc.CallOption) (TicketService_GetUserSummaryClient, error)
+	GetStatusSummary(ctx context.Context, in *Empty, opts ...grpc.CallOption) (TicketService_GetStatusSummaryClient, error)
+	GetShopSummary(ctx context.Context, in *Empty, opts ...grpc.CallOption) (TicketService_GetShopSummaryClient, error)
 }
 
 type ticketServiceClient struct {
@@ -64,13 +66,109 @@ func (c *ticketServiceClient) FindById(ctx context.Context, in *FindByIdRequest,
 	return out, nil
 }
 
-func (c *ticketServiceClient) CloseTicket(ctx context.Context, in *CloseTicketRequest, opts ...grpc.CallOption) (*share.Empty, error) {
-	out := new(share.Empty)
+func (c *ticketServiceClient) CloseTicket(ctx context.Context, in *CloseTicketRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/ticket.TicketService/CloseTicket", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *ticketServiceClient) GetUserSummary(ctx context.Context, in *Empty, opts ...grpc.CallOption) (TicketService_GetUserSummaryClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TicketService_ServiceDesc.Streams[0], "/ticket.TicketService/GetUserSummary", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &ticketServiceGetUserSummaryClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TicketService_GetUserSummaryClient interface {
+	Recv() (*UserSummary, error)
+	grpc.ClientStream
+}
+
+type ticketServiceGetUserSummaryClient struct {
+	grpc.ClientStream
+}
+
+func (x *ticketServiceGetUserSummaryClient) Recv() (*UserSummary, error) {
+	m := new(UserSummary)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *ticketServiceClient) GetStatusSummary(ctx context.Context, in *Empty, opts ...grpc.CallOption) (TicketService_GetStatusSummaryClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TicketService_ServiceDesc.Streams[1], "/ticket.TicketService/GetStatusSummary", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &ticketServiceGetStatusSummaryClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TicketService_GetStatusSummaryClient interface {
+	Recv() (*StatusSummary, error)
+	grpc.ClientStream
+}
+
+type ticketServiceGetStatusSummaryClient struct {
+	grpc.ClientStream
+}
+
+func (x *ticketServiceGetStatusSummaryClient) Recv() (*StatusSummary, error) {
+	m := new(StatusSummary)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *ticketServiceClient) GetShopSummary(ctx context.Context, in *Empty, opts ...grpc.CallOption) (TicketService_GetShopSummaryClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TicketService_ServiceDesc.Streams[2], "/ticket.TicketService/GetShopSummary", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &ticketServiceGetShopSummaryClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TicketService_GetShopSummaryClient interface {
+	Recv() (*ShopSummary, error)
+	grpc.ClientStream
+}
+
+type ticketServiceGetShopSummaryClient struct {
+	grpc.ClientStream
+}
+
+func (x *ticketServiceGetShopSummaryClient) Recv() (*ShopSummary, error) {
+	m := new(ShopSummary)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // TicketServiceServer is the server API for TicketService service.
@@ -80,7 +178,10 @@ type TicketServiceServer interface {
 	Create(context.Context, *CreateRequest) (*CreateResponse, error)
 	List(context.Context, *ListRequest) (*ListResponse, error)
 	FindById(context.Context, *FindByIdRequest) (*Ticket, error)
-	CloseTicket(context.Context, *CloseTicketRequest) (*share.Empty, error)
+	CloseTicket(context.Context, *CloseTicketRequest) (*Empty, error)
+	GetUserSummary(*Empty, TicketService_GetUserSummaryServer) error
+	GetStatusSummary(*Empty, TicketService_GetStatusSummaryServer) error
+	GetShopSummary(*Empty, TicketService_GetShopSummaryServer) error
 	mustEmbedUnimplementedTicketServiceServer()
 }
 
@@ -97,8 +198,17 @@ func (UnimplementedTicketServiceServer) List(context.Context, *ListRequest) (*Li
 func (UnimplementedTicketServiceServer) FindById(context.Context, *FindByIdRequest) (*Ticket, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindById not implemented")
 }
-func (UnimplementedTicketServiceServer) CloseTicket(context.Context, *CloseTicketRequest) (*share.Empty, error) {
+func (UnimplementedTicketServiceServer) CloseTicket(context.Context, *CloseTicketRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CloseTicket not implemented")
+}
+func (UnimplementedTicketServiceServer) GetUserSummary(*Empty, TicketService_GetUserSummaryServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetUserSummary not implemented")
+}
+func (UnimplementedTicketServiceServer) GetStatusSummary(*Empty, TicketService_GetStatusSummaryServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetStatusSummary not implemented")
+}
+func (UnimplementedTicketServiceServer) GetShopSummary(*Empty, TicketService_GetShopSummaryServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetShopSummary not implemented")
 }
 func (UnimplementedTicketServiceServer) mustEmbedUnimplementedTicketServiceServer() {}
 
@@ -185,6 +295,69 @@ func _TicketService_CloseTicket_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TicketService_GetUserSummary_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TicketServiceServer).GetUserSummary(m, &ticketServiceGetUserSummaryServer{stream})
+}
+
+type TicketService_GetUserSummaryServer interface {
+	Send(*UserSummary) error
+	grpc.ServerStream
+}
+
+type ticketServiceGetUserSummaryServer struct {
+	grpc.ServerStream
+}
+
+func (x *ticketServiceGetUserSummaryServer) Send(m *UserSummary) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _TicketService_GetStatusSummary_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TicketServiceServer).GetStatusSummary(m, &ticketServiceGetStatusSummaryServer{stream})
+}
+
+type TicketService_GetStatusSummaryServer interface {
+	Send(*StatusSummary) error
+	grpc.ServerStream
+}
+
+type ticketServiceGetStatusSummaryServer struct {
+	grpc.ServerStream
+}
+
+func (x *ticketServiceGetStatusSummaryServer) Send(m *StatusSummary) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _TicketService_GetShopSummary_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TicketServiceServer).GetShopSummary(m, &ticketServiceGetShopSummaryServer{stream})
+}
+
+type TicketService_GetShopSummaryServer interface {
+	Send(*ShopSummary) error
+	grpc.ServerStream
+}
+
+type ticketServiceGetShopSummaryServer struct {
+	grpc.ServerStream
+}
+
+func (x *ticketServiceGetShopSummaryServer) Send(m *ShopSummary) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // TicketService_ServiceDesc is the grpc.ServiceDesc for TicketService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -209,6 +382,22 @@ var TicketService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TicketService_CloseTicket_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetUserSummary",
+			Handler:       _TicketService_GetUserSummary_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetStatusSummary",
+			Handler:       _TicketService_GetStatusSummary_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetShopSummary",
+			Handler:       _TicketService_GetShopSummary_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "tickets.proto",
 }

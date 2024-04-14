@@ -3,7 +3,6 @@ package ticketservice
 import (
 	"context"
 	"fmt"
-	"github.com/mzhn-sochi/gateway/api/share"
 	"github.com/mzhn-sochi/gateway/api/ts"
 	"github.com/mzhn-sochi/gateway/internal/config"
 	"github.com/mzhn-sochi/gateway/internal/entity"
@@ -77,7 +76,7 @@ func (s *Service) List(ctx context.Context, filters *entity.TicketFilters) ([]*e
 		Filter: &ts.Filter{
 			UserId: filters.UserId,
 		},
-		Bounds: &share.Bounds{
+		Bounds: &ts.Bounds{
 			Limit:  filters.Limit,
 			Offset: filters.Offset,
 		},

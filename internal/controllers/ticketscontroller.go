@@ -3,15 +3,15 @@ package controllers
 import (
 	"context"
 	"errors"
-	"github.com/mzhn-sochi/gateway/internal/entity/dto"
-	"github.com/mzhn-sochi/gateway/internal/service/ticketservice"
-	"log/slog"
-
+	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mzhn-sochi/gateway/internal/entity"
+	"github.com/mzhn-sochi/gateway/internal/entity/dto"
+	"github.com/mzhn-sochi/gateway/internal/service/ticketservice"
 	"github.com/mzhn-sochi/gateway/pkg/file"
 	"github.com/mzhn-sochi/gateway/pkg/middleware"
+	"log/slog"
 )
 
 type TicketsService interface {
@@ -30,19 +30,33 @@ type UserFinder interface {
 	FindById(ctx context.Context, id string) (*entity.User, error)
 }
 
+type SummaryService interface {
+	ShopSummary(ctx context.Context) (map[string]int64, error)
+	UserSummary(ctx context.Context) (map[string]int64, error)
+	StatusSummary(ctx context.Context) (map[string]int64, error)
+}
+
 type TicketController struct {
 	service      TicketsService
 	fileUploader FileUploader
-	validator    *validator.Validate
 	userFinder   UserFinder
+	summary      SummaryService
+
+	validator *validator.Validate
 }
 
-func NewTicketController(service TicketsService, fileUploader FileUploader, userFinder UserFinder) *TicketController {
+func NewTicketController(
+	service TicketsService,
+	fileUploader FileUploader,
+	userFinder UserFinder,
+	summary SummaryService,
+) *TicketController {
 	return &TicketController{
 		service:      service,
 		validator:    validator.New(),
 		fileUploader: fileUploader,
 		userFinder:   userFinder,
+		summary:      summary,
 	}
 }
 
@@ -252,7 +266,6 @@ func (c *TicketController) Create() fiber.Handler {
 }
 
 func (c *TicketController) CloseTicket() fiber.Handler {
-
 	return func(ctx *fiber.Ctx) error {
 		logger := ctx.Locals(middleware.LOGGER).(*slog.Logger).With("service", "tickets").With("method", "CloseTicket")
 
@@ -271,5 +284,103 @@ func (c *TicketController) CloseTicket() fiber.Handler {
 		}
 
 		return ok(ctx)
+	}
+}
+
+func (c *TicketController) ShopSummary() fiber.Handler {
+
+	type response struct {
+		Records []*dto.SummaryRecord `json:"records"`
+	}
+
+	return func(ctx *fiber.Ctx) error {
+		logger := ctx.Locals(middleware.LOGGER).(*slog.Logger).With("service", "tickets").With("method", "ShopSummary")
+		ctx.Locals(middleware.LOGGER, logger)
+
+		summary, err := c.summary.ShopSummary(ctx.Context())
+		if err != nil {
+			return internal(err.Error())
+		}
+
+		res := &response{
+			Records: make([]*dto.SummaryRecord, 0, len(summary)),
+		}
+
+		for shop, count := range summary {
+			res.Records = append(res.Records, &dto.SummaryRecord{
+				Key:   shop,
+				Count: count,
+			})
+		}
+
+		return ok(ctx, res)
+	}
+}
+func (c *TicketController) UserSummary() fiber.Handler {
+
+	type response struct {
+		Records []*dto.SummaryRecord `json:"records"`
+	}
+
+	return func(ctx *fiber.Ctx) error {
+		logger := ctx.Locals(middleware.LOGGER).(*slog.Logger).With("service", "tickets").With("method", "UserSummary")
+		ctx.Locals(middleware.LOGGER, logger)
+
+		summary, err := c.summary.UserSummary(ctx.Context())
+		if err != nil {
+			return internal(err.Error())
+		}
+
+		res := &response{
+			Records: make([]*dto.SummaryRecord, 0, len(summary)),
+		}
+
+		for userId, count := range summary {
+			user, err := c.userFinder.FindById(ctx.Context(), userId)
+			if err != nil {
+				return internal(err.Error())
+			}
+
+			res.Records = append(res.Records, &dto.SummaryRecord{
+				Key: fmt.Sprintf(
+					"%s %s. %s. +%s",
+					user.FirstName,
+					string([]rune(user.LastName)[0:1]),
+					string([]rune(user.MiddleName)[0:1]),
+					user.Phone,
+				),
+				Count: count,
+			})
+		}
+
+		return ok(ctx, res)
+	}
+}
+
+func (c *TicketController) StatusSummary() fiber.Handler {
+	type response struct {
+		Records []*dto.SummaryRecord `json:"records"`
+	}
+
+	return func(ctx *fiber.Ctx) error {
+		logger := ctx.Locals(middleware.LOGGER).(*slog.Logger).With("service", "tickets").With("method", "StatusSummary")
+		ctx.Locals(middleware.LOGGER, logger)
+
+		var res response
+
+		summary, err := c.summary.StatusSummary(ctx.Context())
+		if err != nil {
+			return internal(err.Error())
+		}
+		res.Records = make([]*dto.SummaryRecord, 0, len(summary))
+
+		for status, count := range summary {
+			res.Records = append(res.Records, &dto.SummaryRecord{
+				Key:   status,
+				Count: count,
+			})
+		}
+
+		return ok(ctx, res)
 	}
 }
