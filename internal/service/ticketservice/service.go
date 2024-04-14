@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+	"log"
 	"log/slog"
 )
 
@@ -56,6 +57,8 @@ func (s *Service) Find(ctx context.Context, id string) (*entity.Ticket, error) {
 		return nil, err
 	}
 
+	log.Printf("ticket from req %+v", ticket.Item)
+
 	var item *entity.Item
 	if ticket.Item != nil {
 		item = &entity.Item{
@@ -67,6 +70,8 @@ func (s *Service) Find(ctx context.Context, id string) (*entity.Ticket, error) {
 			Overprice:   ticket.Item.Overprice,
 		}
 	}
+
+	log.Printf("item %+v", item)
 
 	return &entity.Ticket{
 		Id:          ticket.Id,
