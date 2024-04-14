@@ -22,4 +22,14 @@ type Ticket struct {
 	CreatedAt   int64   `json:"createdAt"`
 	UpdatedAt   *int64  `json:"updatedAt"`
 	Reason      *string `json:"reason"`
+	Item        *Item
+}
+
+type Item struct {
+	Product     string  `json:"product"`
+	Description string  `json:"description"`
+	Price       float32 `json:"price"`
+	Amount      float32 `json:"amount"`
+	Unit        string  `json:"unit"`
+	Overprice   uint32  `json:"overprice"`
 }

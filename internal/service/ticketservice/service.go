@@ -56,6 +56,18 @@ func (s *Service) Find(ctx context.Context, id string) (*entity.Ticket, error) {
 		return nil, err
 	}
 
+	var item *entity.Item
+	if ticket.Item != nil {
+		item = &entity.Item{
+			Product:     ticket.Item.Product,
+			Description: ticket.Item.Description,
+			Price:       ticket.Item.Price,
+			Amount:      ticket.Item.Amount,
+			Unit:        ticket.Item.Unit,
+			Overprice:   ticket.Item.Overprice,
+		}
+	}
+
 	return &entity.Ticket{
 		Id:          ticket.Id,
 		UserId:      ticket.UserId,
@@ -66,6 +78,7 @@ func (s *Service) Find(ctx context.Context, id string) (*entity.Ticket, error) {
 		CreatedAt:   ticket.CreatedAt,
 		UpdatedAt:   ticket.UpdatedAt,
 		Reason:      ticket.Reason,
+		Item:        item,
 	}, nil
 }
 func (s *Service) List(ctx context.Context, filters *entity.TicketFilters) ([]*entity.Ticket, uint64, error) {
@@ -90,6 +103,19 @@ func (s *Service) List(ctx context.Context, filters *entity.TicketFilters) ([]*e
 
 	tt := make([]*entity.Ticket, 0, len(response.Tickets))
 	for _, t := range response.Tickets {
+
+		var item *entity.Item
+		if t.Item != nil {
+			item = &entity.Item{
+				Product:     t.Item.Product,
+				Description: t.Item.Description,
+				Price:       t.Item.Price,
+				Amount:      t.Item.Amount,
+				Unit:        t.Item.Unit,
+				Overprice:   t.Item.Overprice,
+			}
+		}
+
 		tt = append(tt, &entity.Ticket{
 			Id:          t.Id,
 			UserId:      t.UserId,
@@ -100,6 +126,7 @@ func (s *Service) List(ctx context.Context, filters *entity.TicketFilters) ([]*e
 			CreatedAt:   t.CreatedAt,
 			UpdatedAt:   t.UpdatedAt,
 			Reason:      t.Reason,
+			Item:        item,
 		})
 	}
 
