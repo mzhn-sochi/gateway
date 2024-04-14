@@ -22,7 +22,7 @@ type Ticket struct {
 	CreatedAt   int64   `json:"createdAt"`
 	UpdatedAt   *int64  `json:"updatedAt"`
 	Reason      *string `json:"reason"`
-	Item        *Item
+	Item        *Item   `json:"item"`
 }
 
 type Item struct {
