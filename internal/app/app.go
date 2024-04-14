@@ -94,6 +94,11 @@ func (a *App) Run() error {
 	v1.Get("/user/tickets", a.AuthController.AuthRequired(auth.Role_user), a.ticketController.ListUsers())
 	v1.Get("/profile", a.AuthController.AuthRequired(auth.Role_user), a.AuthController.Profile())
 
+	summary := v1.Group("/summary")
+	summary.Get("/users", a.ticketController.UserSummary())
+	summary.Get("/statuses", a.ticketController.StatusSummary())
+	summary.Get("/shops", a.ticketController.ShopSummary())
+
 	a.logger.Info("server started", slog.String("host", host), slog.Int("port", port))
 	return a.app.Listen(fmt.Sprintf("%s:%d", host, port))
 }

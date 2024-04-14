@@ -34,6 +34,7 @@ func InitApp() *App {
 		wire.NewSet(s3service.New),
 		wire.Bind(new(controllers.TicketsService), new(*ticketservice.Service)),
 		wire.Bind(new(controllers.FileUploader), new(*s3service.S3Service)),
+		wire.Bind(new(controllers.SummaryService), new(*ticketservice.Service)),
 		wire.NewSet(controllers.NewTicketController),
 	))
 }
